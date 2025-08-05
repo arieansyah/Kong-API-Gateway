@@ -78,14 +78,14 @@ services:
       KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET:-your_session_secret_here}
       KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin_secure_password_2024}"}}'
       # Additional security settings
-      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:8443 ssl
       KONG_NGINX_WORKER_PROCESSES: auto
       KONG_NGINX_WORKER_CONNECTIONS: 1024
       # Rate limiting
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,::/0
     ports:
-      - "8000:8000" # HTTP proxy port
+      - "3000:3000" # HTTP proxy port
       - "8443:8443" # HTTPS proxy port
       # Admin API - consider removing if not needed externally
       # - "8001:8001"
