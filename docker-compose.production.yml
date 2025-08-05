@@ -96,7 +96,7 @@ services:
       KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD}"}}'
 
       # SSL and proxy settings
-      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:3001 ssl
       KONG_SSL_CERT: /etc/kong/ssl/kong.crt
       KONG_SSL_CERT_KEY: /etc/kong/ssl/kong.key
 
@@ -113,8 +113,8 @@ services:
 
     ports:
       # Only expose proxy ports, NOT admin ports
-      - "80:8000" # HTTP proxy port
-      - "443:8443" # HTTPS proxy port
+      - "3000:3000" # HTTP proxy port
+      - "3001:3001" # HTTPS proxy port
       # Admin ports should NOT be exposed in production
       # Use SSH tunnel or VPN to access admin interface
 
