@@ -7,8 +7,8 @@ services:
       POSTGRES_USER: kong
       POSTGRES_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
       POSTGRES_DB: kong
-      # Additional security settings
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      # Use md5 auth for better compatibility with older clients
+      POSTGRES_INITDB_ARGS: "--auth-host=md5 --auth-local=trust"
     volumes:
       - kong-database-data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
@@ -87,10 +87,10 @@ services:
     ports:
       - "3000:3000" # HTTP proxy port
       - "8443:8443" # HTTPS proxy port
-      # Admin API - consider removing if not needed externally
-      # - "8001:8001"
-      # Admin GUI - consider removing if not needed externally
-      # - "8002:8002"
+      # Admin API - enable for Kong Manager
+      - "8001:8001"
+      # Admin GUI - enable for Kong Manager
+      - "8002:8002"
     depends_on:
       kong-database:
         condition: service_healthy
@@ -116,42 +116,9 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  konga:
-    image: pantsel/konga:0.14.9
-    environment:
-      NODE_ENV: production
-      # Security improvements for Konga
-      TOKEN_SECRET: ${KONGA_TOKEN_SECRET:-your_konga_token_secret_2024}
-      JWT_SECRET: ${KONGA_JWT_SECRET:-your_konga_jwt_secret_2024}
-      # Kong connection
-      KONG_ADMIN_URL: http://kong:8001
-      DB_ADAPTER: postgres
-      DB_HOST: kong-database
-      DB_USER: kong
-      DB_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
-      DB_DATABASE: konga
-    ports:
-      - "1337:1337"
-    depends_on:
-      kong:
-        condition: service_healthy
-    networks:
-      - kong-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:1337 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
+  # Konga has been replaced with Kong Manager (built into Kong)
+  # Kong Manager is accessible at http://localhost:8002
+  # and is fully compatible with Kong 3.7
 
 volumes:
   kong-database-data:

@@ -1,0 +1,155 @@
+version: "3.8"
+
+services:
+  kong-database:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: ${DB_PASSWORD}  # REQUIRED: Must be set in .env
+      POSTGRES_DB: kong
+      # Production-grade authentication
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - kong-database-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    command: ["postgres", "-c", "max_connections=200", "-c", "shared_preload_libraries=pg_stat_statements"]
+    # Database should NEVER be exposed to host in production
+    networks:
+      - kong-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    # Production security settings
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+
+  kong-migration:
+    image: kong:3.7
+    command: kong migrations bootstrap
+    user: kong
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: ${DB_PASSWORD}
+      KONG_PG_DATABASE: kong
+      # Production log level
+      KONG_LOG_LEVEL: notice
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    networks:
+      - kong-net
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+  kong:
+    image: kong:3.7
+    user: kong
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: ${DB_PASSWORD}
+      KONG_PG_DATABASE: kong
+      
+      # Production logging
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_LOG_LEVEL: notice  # Changed from debug
+      
+      # Admin interface - ONLY bind to localhost in production
+      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      KONG_ADMIN_GUI_URL: http://127.0.0.1:8002
+      
+      # Production security settings
+      KONG_ADMIN_GUI_AUTH: basic-auth
+      KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET}
+      KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD}"}}'
+      
+      # SSL and proxy settings
+      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_SSL_CERT: /etc/kong/ssl/kong.crt
+      KONG_SSL_CERT_KEY: /etc/kong/ssl/kong.key
+      
+      # Performance settings
+      KONG_NGINX_WORKER_PROCESSES: auto
+      KONG_NGINX_WORKER_CONNECTIONS: 2048
+      
+      # Production trusted IPs - CUSTOMIZE for your infrastructure
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16
+      
+      # Additional security headers
+      KONG_HEADERS: "Server: Kong/${KONG_VERSION}"
+      
+    ports:
+      # Only expose proxy ports, NOT admin ports
+      - "80:8000"    # HTTP proxy port
+      - "443:8443"   # HTTPS proxy port
+      # Admin ports should NOT be exposed in production
+      # Use SSH tunnel or VPN to access admin interface
+      
+    volumes:
+      # Mount SSL certificates
+      - ./ssl:/etc/kong/ssl:ro
+      
+    depends_on:
+      kong-database:
+        condition: service_healthy
+      kong-migration:
+        condition: service_completed_successfully
+    networks:
+      - kong-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "1.0"
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
+volumes:
+  kong-database-data:
+    driver: local
+
+networks:
+  kong-net:
+    driver: bridge
+    # Production network configuration
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
