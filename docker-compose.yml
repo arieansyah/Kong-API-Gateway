@@ -1,0 +1,159 @@
+version: "3.8"
+
+services:
+  kong-database:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      POSTGRES_DB: kong
+      # Additional security settings
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - kong-database-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    # Removed port exposure for security - database only accessible within network
+    # ports:
+    #   - "5432:5432"
+    networks:
+      - kong-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  kong-migration:
+    image: kong:3.7
+    command: kong migrations bootstrap
+    user: kong
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      KONG_PG_DATABASE: kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    networks:
+      - kong-net
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+  kong:
+    image: kong:3.7
+    user: kong
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      KONG_PG_DATABASE: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      # Security improvements
+      KONG_ADMIN_GUI_AUTH: basic-auth
+      KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET:-your_session_secret_here}
+      KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin_secure_password_2024}"}}'
+      # Additional security settings
+      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_NGINX_WORKER_PROCESSES: auto
+      KONG_NGINX_WORKER_CONNECTIONS: 1024
+      # Rate limiting
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,::/0
+    ports:
+      - "3000:3000" # HTTP proxy port
+      - "8443:8443" # HTTPS proxy port
+      # Admin API - consider removing if not needed externally
+      # - "8001:8001"
+      # Admin GUI - consider removing if not needed externally
+      # - "8002:8002"
+    depends_on:
+      kong-database:
+        condition: service_healthy
+      kong-migration:
+        condition: service_completed_successfully
+    networks:
+      - kong-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    security_opt:
+      - no-new-privileges:true
+
+  konga:
+    image: pantsel/konga:0.14.9
+    environment:
+      NODE_ENV: production
+      # Security improvements for Konga
+      TOKEN_SECRET: ${KONGA_TOKEN_SECRET:-your_konga_token_secret_2024}
+      JWT_SECRET: ${KONGA_JWT_SECRET:-your_konga_jwt_secret_2024}
+      # Kong connection
+      KONG_ADMIN_URL: http://kong:8001
+      DB_ADAPTER: postgres
+      DB_HOST: kong-database
+      DB_USER: kong
+      DB_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      DB_DATABASE: konga
+    ports:
+      - "1337:1337"
+    depends_on:
+      kong:
+        condition: service_healthy
+    networks:
+      - kong-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:1337 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+volumes:
+  kong-database-data:
+    driver: local
+
+networks:
+  kong-net:
+    driver: bridge
