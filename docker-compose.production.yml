@@ -106,9 +106,6 @@ services:
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16
 
-      # Additional security headers
-      KONG_HEADERS: "Server: Kong/${KONG_VERSION}"
-
     ports:
       # Only expose proxy ports, NOT admin ports
       - "3000:3000" # HTTP proxy port
