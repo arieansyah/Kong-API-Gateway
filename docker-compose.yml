@@ -10,7 +10,7 @@ services:
       # Simplified auth for development
       POSTGRES_INITDB_ARGS: "--auth-host=md5 --auth-local=trust"
     volumes:
-      - kong-database-data:/var/lib/postgresql/data
+      - kong-database-dev-data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     command: ["postgres", "-c", "max_connections=200"]
     ports:
@@ -103,7 +103,7 @@ services:
       start_period: 30s
 
 volumes:
-  kong-database-data:
+  kong-database-dev-data:
     driver: local
 
 networks:
