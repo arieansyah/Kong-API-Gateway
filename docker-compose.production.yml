@@ -86,9 +86,12 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: notice # Changed from debug
 
-      # Admin interface - bind hanya ke localhost untuk security
-      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      # Admin interface - perbaikan untuk internal communication
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001 # Ganti dari 127.0.0.1:8001
       KONG_ADMIN_GUI_URL: http://127.0.0.1:8002
+
+      # Tambahkan ini untuk Kong Manager bisa akses Admin API
+      KONG_ADMIN_API_URI: http://localhost:8001
 
       # Production security settings
       KONG_ADMIN_GUI_AUTH: basic-auth
@@ -111,7 +114,7 @@ services:
       - "3000:3000" # HTTP proxy port
       - "3001:3001" # HTTPS proxy port
 
-      # Admin ports - HANYA bind ke localhost untuk security
+      # Admin ports - tetap bind ke localhost untuk security
       - "127.0.0.1:8001:8001" # Admin API (hanya localhost)
       - "127.0.0.1:8002:8002" # Admin GUI (hanya localhost)
 
