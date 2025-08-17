@@ -64,7 +64,7 @@ services:
 
       # Admin interface - accessible from host for development
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_ADMIN_GUI_URL: http://localhost:9001
+      KONG_ADMIN_GUI_URL: http://localhost:8901
       KONG_ADMIN_API_URI: http://localhost:8001
 
       # CORS configuration untuk development
@@ -89,8 +89,8 @@ services:
       - "4000:3000" # HTTP proxy (dev: 4000, prod: 3000)
       - "4001:3001" # HTTPS proxy (dev: 4001, prod: 3001)
       # Admin ports (different from production)
-      - "9001:8001" # Admin API (dev: 9001, prod: 8001)
-      - "9001:8002" # Admin GUI (dev: 9002, prod: 8002)
+      - "8901:8001" # Admin API (dev: 9001, prod: 8001)
+      - "8901:8002" # Admin GUI (dev: 9002, prod: 8002)
 
     depends_on:
       kong-database-dev:
