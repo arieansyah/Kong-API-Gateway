@@ -129,8 +129,4 @@ volumes:
 networks:
   kong-net-dev:
     driver: bridge
-    # PERBAIKAN: Isolate network
-    internal: false
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+    # PERBAIKAN: Biarkan Docker auto-assign subnet untuk menghindari konflik
