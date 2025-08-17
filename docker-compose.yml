@@ -69,7 +69,7 @@ services:
 
       # PERBAIKAN: Admin interface yang lebih aman
       KONG_ADMIN_LISTEN: 0.0.0.0:9001 # PERBAIKAN: Bind ke localhost saja
-      # KONG_ADMIN_GUI_LISTEN: 0.0.0.0:9002 # PERBAIKAN: Bind ke localhost saja
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:9002 # PERBAIKAN: Bind ke localhost saja
       KONG_ADMIN_GUI_URL: http://127.0.0.1:9002 # PERBAIKAN: Gunakan localhost
       KONG_ADMIN_API_URI: http://localhost:9001 # PERBAIKAN: Gunakan localhost
 
