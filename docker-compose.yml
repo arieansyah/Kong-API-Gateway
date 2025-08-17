@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  kong-database:
+  kong-database-dev:
     image: postgres:13-alpine
     environment:
       POSTGRES_USER: kong
@@ -17,7 +17,7 @@ services:
       # Expose database port for development debugging
       - "5433:5432" # Development database port
     networks:
-      - kong-net
+      - kong-net-dev
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kong"]
@@ -26,7 +26,7 @@ services:
       retries: 5
       start_period: 10s
 
-  kong-migration:
+  kong-migration-dev:
     image: kong:3.7
     command: kong migrations bootstrap
     user: kong
@@ -39,13 +39,13 @@ services:
       # Debug level for development
       KONG_LOG_LEVEL: debug
     depends_on:
-      kong-database:
+      kong-database-dev:
         condition: service_healthy
     networks:
-      - kong-net
+      - kong-net-dev
     restart: on-failure
 
-  kong:
+  kong-dev:
     image: kong:3.7
     user: kong
     environment:
@@ -88,12 +88,12 @@ services:
       - "9002:8002" # Admin GUI (dev: 9002, prod: 8002)
 
     depends_on:
-      kong-database:
+      kong-database-dev:
         condition: service_healthy
-      kong-migration:
+      kong-migration-dev:
         condition: service_completed_successfully
     networks:
-      - kong-net
+      - kong-net-dev
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "kong", "health"]
@@ -107,5 +107,5 @@ volumes:
     driver: local
 
 networks:
-  kong-net:
+  kong-net-dev:
     driver: bridge
