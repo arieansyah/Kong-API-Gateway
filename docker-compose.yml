@@ -5,34 +5,26 @@ services:
     image: postgres:13-alpine
     environment:
       POSTGRES_USER: kong
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kong_dev_password}
       POSTGRES_DB: kong
-      # Use md5 auth for better compatibility with older clients
+      # Simplified auth for development
       POSTGRES_INITDB_ARGS: "--auth-host=md5 --auth-local=trust"
     volumes:
       - kong-database-data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     command: ["postgres", "-c", "max_connections=200"]
-    # Removed port exposure for security - database only accessible within network
-    # ports:
-    #   - "5432:5432"
+    ports:
+      # Expose database port for development debugging
+      - "5433:5432" # Development database port
     networks:
       - kong-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kong"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   kong-migration:
     image: kong:3.7
@@ -42,8 +34,9 @@ services:
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-database
       KONG_PG_USER: kong
-      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_dev_password}
       KONG_PG_DATABASE: kong
+      # Debug level for development
       KONG_LOG_LEVEL: debug
     depends_on:
       kong-database:
@@ -51,11 +44,6 @@ services:
     networks:
       - kong-net
     restart: on-failure
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.25"
 
   kong:
     image: kong:3.7
@@ -64,33 +52,41 @@ services:
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-database
       KONG_PG_USER: kong
-      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_secure_password_2024}
+      KONG_PG_PASSWORD: ${DB_PASSWORD:-kong_dev_password}
       KONG_PG_DATABASE: kong
+
+      # Development logging (more verbose)
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: debug
+
+      # Admin interface - accessible from host for development
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_ADMIN_GUI_URL: http://localhost:8002
-      # Security improvements
+      KONG_ADMIN_GUI_URL: http://localhost:9002
+      KONG_ADMIN_API_URI: http://localhost:9001
+
+      # Development security (simplified)
       KONG_ADMIN_GUI_AUTH: basic-auth
-      KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET:-your_session_secret_here}
-      KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin_secure_password_2024}"}}'
-      # Additional security settings
-      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:8443 ssl
-      KONG_NGINX_WORKER_PROCESSES: auto
-      KONG_NGINX_WORKER_CONNECTIONS: 1024
-      # Rate limiting
+      KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET:-dev_session_secret_change_in_production}
+      KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin123}"}}'
+
+      # Proxy settings
+      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:3001 ssl
+
+      # Development trusted IPs (more permissive)
       KONG_REAL_IP_HEADER: X-Forwarded-For
-      KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,::/0
+      KONG_TRUSTED_IPS: 0.0.0.0/0,::/0
+
     ports:
-      - "3000:3000" # HTTP proxy port
-      - "8443:8443" # HTTPS proxy port
-      # Admin API - enable for Kong Manager
-      - "8001:8001"
-      # Admin GUI - enable for Kong Manager
-      - "8002:8002"
+      # Proxy ports (different from production)
+      - "4000:3000" # HTTP proxy (dev: 4000, prod: 3000)
+      - "4001:3001" # HTTPS proxy (dev: 4001, prod: 3001)
+      # Admin ports (different from production)
+      - "9001:8001" # Admin API (dev: 9001, prod: 8001)
+      - "9002:8002" # Admin GUI (dev: 9002, prod: 8002)
+
     depends_on:
       kong-database:
         condition: service_healthy
@@ -101,24 +97,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "kong", "health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
-        reservations:
-          memory: 512M
-          cpus: "0.5"
-    security_opt:
-      - no-new-privileges:true
-
-  # Konga has been replaced with Kong Manager (built into Kong)
-  # Kong Manager is accessible at http://localhost:8002
-  # and is fully compatible with Kong 3.7
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   kong-database-data:
