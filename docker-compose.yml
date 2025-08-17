@@ -64,8 +64,8 @@ services:
 
       # Admin interface - accessible from host for development
       KONG_ADMIN_LISTEN: 0.0.0.0:9001
-      KONG_ADMIN_GUI_URL: http://localhost:9002 # ✅ Protocol + localhost
-      KONG_ADMIN_API_URI: http://localhost:9001 # ✅ Protocol + localhost
+      KONG_ADMIN_GUI_URL: http://0.0.0.0:9002
+      KONG_ADMIN_API_URI: http://0.0.0.0:9001
 
       # CORS configuration untuk development
       KONG_ADMIN_GUI_ACCESS_LOG: /dev/stdout
@@ -78,7 +78,7 @@ services:
       KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin123}"}}'
 
       # Proxy settings
-      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:3001 ssl
+      KONG_PROXY_LISTEN: 0.0.0.0:4000, 0.0.0.0:4001 ssl
 
       # Development trusted IPs (more permissive)
       KONG_REAL_IP_HEADER: X-Forwarded-For
@@ -86,11 +86,11 @@ services:
 
     ports:
       # Proxy ports (different from production)
-      - "4000:3000" # HTTP proxy (dev: 4000, prod: 3000)
-      - "4001:3001" # HTTPS proxy (dev: 4001, prod: 3001)
+      - "4000:4000" # HTTP proxy (dev: 4000, prod: 3000)
+      - "4001:4001" # HTTPS proxy (dev: 4001, prod: 3001)
       # Admin ports (different from production)
-      - "9001:8001" # Admin API (dev: 9001, prod: 8001)
-      - "9002:8002" # Admin GUI (dev: 9002, prod: 8002)
+      - "9001:9001" # Admin API (dev: 9001, prod: 8001)
+      - "9002:9002" # Admin GUI (dev: 9002, prod: 8002)
 
     depends_on:
       kong-database-dev:
