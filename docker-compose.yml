@@ -62,9 +62,10 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: debug
 
-      # Admin interface - accessible from host for development
+      # Admin interface - PERBAIKAN KONFIGURASI
       KONG_ADMIN_LISTEN: 0.0.0.0:9001
-      KONG_ADMIN_GUI_URL: http://127.0.0.1:9002
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:9002 # TAMBAHAN: Missing GUI listen
+      KONG_ADMIN_GUI_URL: http://localhost:9002 # PERBAIKAN: Gunakan localhost konsisten
       KONG_ADMIN_API_URI: http://localhost:9001
 
       # CORS configuration untuk development
@@ -72,10 +73,11 @@ services:
       KONG_ADMIN_CORS_ORIGINS: "*"
       KONG_ADMIN_GUI_AUTH_LOGIN_ATTEMPTS: 5
 
-      # Development security (simplified)
+      # Development security (simplified) - PERBAIKAN AUTH CONFIG
       KONG_ADMIN_GUI_AUTH: basic-auth
       KONG_ADMIN_GUI_SESSION_SECRET: ${KONG_SESSION_SECRET:-dev_session_secret}
-      KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin123}"}}'
+      # PERBAIKAN: Escape quotes dalam auth config
+      KONG_ADMIN_GUI_AUTH_CONF: '{"admin":{"password":"${KONG_ADMIN_PASSWORD:-admin123}"}}'
 
       # Proxy settings
       KONG_PROXY_LISTEN: 0.0.0.0:4000, 0.0.0.0:4001 ssl
