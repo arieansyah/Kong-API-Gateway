@@ -86,8 +86,8 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: notice # Changed from debug
 
-      # Admin interface - ONLY bind to localhost in production
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      # Admin interface - bind hanya ke localhost untuk security
+      KONG_ADMIN_LISTEN: 127.0.0.1:8001
       KONG_ADMIN_GUI_URL: http://127.0.0.1:8002
 
       # Production security settings
@@ -107,11 +107,13 @@ services:
       KONG_TRUSTED_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16
 
     ports:
-      # Only expose proxy ports, NOT admin ports
+      # Proxy ports (tetap seperti sebelumnya)
       - "3000:3000" # HTTP proxy port
       - "3001:3001" # HTTPS proxy port
-      # Admin ports should NOT be exposed in production
-      # Use SSH tunnel or VPN to access admin interface
+
+      # Admin ports - HANYA bind ke localhost untuk security
+      - "127.0.0.1:8001:8001" # Admin API (hanya localhost)
+      - "127.0.0.1:8002:8002" # Admin GUI (hanya localhost)
 
     volumes:
       # Mount SSL certificates
