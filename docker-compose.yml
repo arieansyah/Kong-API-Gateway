@@ -65,7 +65,7 @@ services:
       # Admin interface - accessible from host for development
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_ADMIN_GUI_URL: http://localhost:9002
-      KONG_ADMIN_API_URI: http://localhost:9001
+      KONG_ADMIN_API_URI: http://localhost:8001
 
       # Development security (simplified)
       KONG_ADMIN_GUI_AUTH: basic-auth
