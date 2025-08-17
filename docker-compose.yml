@@ -17,7 +17,7 @@ services:
       # Expose database port for development debugging
       - "5433:5432" # Development database port
     networks:
-      - kong-net-dev
+      - kong-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kong"]
@@ -42,7 +42,7 @@ services:
       kong-database-dev:
         condition: service_healthy
     networks:
-      - kong-net-dev
+      - kong-net
     restart: on-failure
 
   kong-dev:
@@ -93,7 +93,7 @@ services:
       kong-migration-dev:
         condition: service_completed_successfully
     networks:
-      - kong-net-dev
+      - kong-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "kong", "health"]
@@ -107,5 +107,5 @@ volumes:
     driver: local
 
 networks:
-  kong-net-dev:
+  kong-net:
     driver: bridge
