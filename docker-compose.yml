@@ -68,14 +68,14 @@ services:
       KONG_LOG_LEVEL: info # PERBAIKAN: Kurangi dari debug ke info
 
       # PERBAIKAN: Admin interface yang lebih aman
-      KONG_ADMIN_LISTEN: 127.0.0.1:9001 # PERBAIKAN: Bind ke localhost saja
-      KONG_ADMIN_GUI_LISTEN: 127.0.0.1:9002 # PERBAIKAN: Bind ke localhost saja
-      KONG_ADMIN_GUI_URL: http://localhost:9002 # PERBAIKAN: Gunakan localhost
+      KONG_ADMIN_LISTEN: 0.0.0.0:9001 # PERBAIKAN: Bind ke localhost saja
+      # KONG_ADMIN_GUI_LISTEN: 0.0.0.0:9002 # PERBAIKAN: Bind ke localhost saja
+      KONG_ADMIN_GUI_URL: http://127.0.0.1:9002 # PERBAIKAN: Gunakan localhost
       KONG_ADMIN_API_URI: http://localhost:9001 # PERBAIKAN: Gunakan localhost
 
       # PERBAIKAN: CORS yang lebih aman
       KONG_ADMIN_GUI_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_CORS_ORIGINS: "http://localhost:9002,http://127.0.0.1:9002" # PERBAIKAN: Specific origins
+      # KONG_ADMIN_CORS_ORIGINS: "http://localhost:9002,http://127.0.0.1:9002" # PERBAIKAN: Specific origins
       KONG_ADMIN_GUI_AUTH_LOGIN_ATTEMPTS: 3 # PERBAIKAN: Kurangi login attempts
 
       # PERBAIKAN: Security yang lebih ketat
