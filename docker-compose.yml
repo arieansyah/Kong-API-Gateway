@@ -73,7 +73,7 @@ services:
       KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD:-admin123}"}}'
 
       # Proxy settings
-      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:3001 ssl
+      KONG_PROXY_LISTEN: 0.0.0.0:4000, 0.0.0.0:4001 ssl
 
       # Development trusted IPs (more permissive)
       KONG_REAL_IP_HEADER: X-Forwarded-For
