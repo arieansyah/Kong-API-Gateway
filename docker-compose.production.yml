@@ -87,7 +87,7 @@ services:
       KONG_LOG_LEVEL: notice # Changed from debug
 
       # Admin interface - ONLY bind to localhost in production
-      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_ADMIN_GUI_URL: http://127.0.0.1:8002
 
       # Production security settings
