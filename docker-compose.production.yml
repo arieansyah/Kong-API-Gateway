@@ -117,13 +117,12 @@ services:
       - "traefik.http.middlewares.kong-gzip.compress=true"
       - "traefik.http.middlewares.kong-redirect.redirectscheme.scheme=https"
 
-      # HTTP Router (redirect to HTTPS)
+      # (Opsional) Biarkan HTTP→HTTPS redirect & HTTP routers jika tetap pakai 3000
       - "traefik.http.routers.kong-http.entryPoints=http"
       - "traefik.http.routers.kong-http.middlewares=kong-redirect"
       - "traefik.http.routers.kong-http.rule=Host(`kong.roots.co.id`) && PathPrefix(`/`)"
       - "traefik.http.routers.kong-http.service=kong-service"
 
-      # HTTPS Router (main service)
       - "traefik.http.routers.kong-https.entryPoints=https"
       - "traefik.http.routers.kong-https.middlewares=kong-gzip"
       - "traefik.http.routers.kong-https.rule=Host(`kong.roots.co.id`) && PathPrefix(`/`)"
@@ -131,13 +130,20 @@ services:
       - "traefik.http.routers.kong-https.tls.certresolver=letsencrypt"
       - "traefik.http.routers.kong-https.tls=true"
 
-      # Service definition - HANYA proxy port
-      - "traefik.http.services.kong-service.loadbalancer.server.port=3000,3001"
+      # HTTP service → 3000 (tetap seperti sekarang)
+      - "traefik.http.services.kong-service.loadbalancer.server.port=3000"
 
-    # TIDAK ada admin ports yang di-expose ke public
+      # Tambah TCP router untuk TLS passthrough ke 3001
+      - "traefik.tcp.routers.kong-tls.entryPoints=https"
+      - "traefik.tcp.routers.kong-tls.rule=HostSNI(`kong.roots.co.id`)"
+      - "traefik.tcp.routers.kong-tls.tls.passthrough=true"
+      - "traefik.tcp.routers.kong-tls.service=kong-tcp-service"
+      - "traefik.tcp.services.kong-tcp-service.loadbalancer.server.port=3001"
+
+    # Expose juga port 3001 di container agar bisa dijangkau Traefik
     expose:
-      - "3000"
-      - "3001"
+      - "3000" # HANYA Kong proxy port
+      - "3001" # Tambahan: HTTPS proxy Kong
 
     ports:
       # Admin ports - bind ke localhost untuk security
