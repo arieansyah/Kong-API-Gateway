@@ -111,11 +111,34 @@ services:
       KONG_REAL_IP_HEADER: CF-Connecting-IP
       KONG_TRUSTED_IPS: 173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
 
-    ports:
-      # Standard HTTP/HTTPS ports
-      - "3000:3000" # HTTP proxy port
-      - "3001:3001" # HTTPS proxy port
+    # Traefik labels - HANYA untuk proxy port
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.kong-gzip.compress=true"
+      - "traefik.http.middlewares.kong-redirect.redirectscheme.scheme=https"
 
+      # HTTP Router (redirect to HTTPS)
+      - "traefik.http.routers.kong-http.entryPoints=http"
+      - "traefik.http.routers.kong-http.middlewares=kong-redirect"
+      - "traefik.http.routers.kong-http.rule=Host(`kong.roots.co.id`) && PathPrefix(`/`)"
+      - "traefik.http.routers.kong-http.service=kong-service"
+
+      # HTTPS Router (main service)
+      - "traefik.http.routers.kong-https.entryPoints=https"
+      - "traefik.http.routers.kong-https.middlewares=kong-gzip"
+      - "traefik.http.routers.kong-https.rule=Host(`kong.roots.co.id`) && PathPrefix(`/`)"
+      - "traefik.http.routers.kong-https.service=kong-service"
+      - "traefik.http.routers.kong-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.kong-https.tls=true"
+
+      # Service definition - HANYA proxy port
+      - "traefik.http.services.kong-service.loadbalancer.server.port=3000"
+
+    # TIDAK ada admin ports yang di-expose ke public
+    expose:
+      - "3000" # HANYA Kong proxy port
+
+    ports:
       # Admin ports - bind ke localhost untuk security
       - "127.0.0.1:8001:8001" # Admin API (hanya localhost)
       - "127.0.0.1:8002:8002" # Admin GUI (hanya localhost)
