@@ -93,11 +93,11 @@ services:
       KONG_ADMIN_GUI_AUTH_CONF: '{"admin": {"password": "${KONG_ADMIN_PASSWORD}"}}'
 
       # SSL and proxy settings - Updated for standard ports
-      KONG_PROXY_LISTEN: 0.0.0.0:80, 0.0.0.0:443 ssl
+      KONG_PROXY_LISTEN: 0.0.0.0:3000, 0.0.0.0:3001 ssl
 
       # SSL certificate configuration
-      KONG_SSL_CERT: /etc/kong/ssl/kong.roots.co.id.crt
-      KONG_SSL_CERT_KEY: /etc/kong/ssl/kong.roots.co.id.key
+      # KONG_SSL_CERT: /etc/kong/ssl/kong.roots.co.id.crt
+      # KONG_SSL_CERT_KEY: /etc/kong/ssl/kong.roots.co.id.key
 
       # Performance settings
       KONG_NGINX_WORKER_PROCESSES: auto
@@ -113,8 +113,8 @@ services:
 
     ports:
       # Standard HTTP/HTTPS ports
-      - "80:80" # HTTP proxy port
-      - "443:443" # HTTPS proxy port
+      - "80:3000" # HTTP proxy port
+      - "443:3001" # HTTPS proxy port
 
       # Admin ports - bind ke localhost untuk security
       - "127.0.0.1:8001:8001" # Admin API (hanya localhost)
