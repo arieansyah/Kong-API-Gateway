@@ -132,11 +132,12 @@ services:
       - "traefik.http.routers.kong-https.tls=true"
 
       # Service definition - HANYA proxy port
-      - "traefik.http.services.kong-service.loadbalancer.server.port=3000"
+      - "traefik.http.services.kong-service.loadbalancer.server.port=3000,3001"
 
     # TIDAK ada admin ports yang di-expose ke public
     expose:
-      - "3000" # HANYA Kong proxy port
+      - "3000"
+      - "3001"
 
     ports:
       # Admin ports - bind ke localhost untuk security
